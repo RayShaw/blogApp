@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-var path = require("path")
+const path = require("path")
 const sha1 = require("sha1")
 
 const UserModel = require("../models/users")
