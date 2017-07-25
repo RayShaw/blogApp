@@ -15,9 +15,8 @@ winston: 日志
 express-winston: 基于 winston 的用于 express 的日志中间件#blogApp -->
 
 
-
+```
 open mongodb default port
-
 npm install
-
 node app.js
+```
