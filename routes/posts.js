@@ -3,6 +3,7 @@ const router = express.Router()
 const checkLogin = require('../middlewares/check').checkLogin
 
 const PostModel = require("../models/posts")
+const CommentModel = require("../models/comments")
 
 // GET /posts 所有用户或者特定用户的文章页
 //   eg: GET /posts?author=xxx
@@ -72,16 +73,19 @@ router.get('/:postId', function (req, res, next) {
 
     Promise.all([
         PostModel.getPostById(postId), // 获取文章信息
+        CommentModel.getComments(postId),// 获取该文章所有留言
         PostModel.incPv(postId) // pv 加1
 
     ]).then(function (result) {
         let post = result[0]
+        let comments = result[1]
         if (!post) {
             throw new Error("该文章不存在")
         }
 
         res.render("post", {
-            post: post
+            post: post,
+            comments: comments
         })
     }).catch(next)
 
@@ -145,12 +149,38 @@ router.get('/:postId/remove', checkLogin, function (req, res, next) {
 
 // POST /posts/:postId/comment 创建一条留言
 router.post('/:postId/comment', checkLogin, function (req, res, next) {
-    res.send(req.flash())
+    // res.send(req.flash())
+    let author = req.session.user._id
+    let postId = req.params.postId
+    let content = req.fields.content
+    let comment = {
+        author: author,
+        postId: postId,
+        content: content
+    }
+
+    CommentModel.create(comment)
+        .then(function () {
+            req.flash("success", "留言成功")
+            // 留言成功后跳转到上一页
+            res.redirect("back")
+        })
+        .catch(next)
 })
 
 // GET /posts/:postId/comment/:commentId/remove 删除一条留言
 router.get('/:postId/comment/:commentId/remove', checkLogin, function (req, res, next) {
-    res.send(req.flash())
+    // res.send(req.flash())
+    let commentId = req.params.commentId
+    let author = req.session.user._id
+
+    CommentModel.delCommentById(commentId, author)
+        .then(function () {
+            req.flash("success", "删除留言成功")
+            // 删除成功后跳转到上一页
+            res.redirect("back")
+        })
+        .catch(next)
 })
 
 module.exports = router

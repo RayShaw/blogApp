@@ -6,6 +6,8 @@ const flash = require('connect-flash')
 const config = require('config-lite')(__dirname)
 const routes = require('./routes')
 const pkg = require('./package')
+const winston = require("winston")
+const expressWinston = require("express-winston")
 
 const app = express()
 
@@ -50,13 +52,59 @@ app.use(function (req, res, next) {
     res.locals.error = req.flash('error').toString()
     next()
 })
+
+
+// 正常请求的日志 放在路由前面
+app.use(expressWinston.logger({
+    transports: [
+        new (winston.transports.Console)({
+            json: true,
+            colorize: true
+        }),
+        new winston.transports.File({
+            filename: 'logs/success.log'
+        })
+    ]
+}))
+
 // 路由
 routes(app)
 // app.use('/', (req, res) =>{
 //   res.render('signup')
 // })
 
-// 监听端口，启动程序
-app.listen(config.port, function () {
-    console.log(`${pkg.name} listening on port ${config.port}`)
+// 错误请求的日志 放在路由后面
+app.use(expressWinston.errorLogger({
+    transports: [
+        new winston.transports.Console({
+            json: true,
+            colorize: true
+        }),
+        new winston.transports.File({
+            filename: 'logs/error.log'
+        })
+    ]
+}))
+
+// error page
+app.use(function (error, req, res, next) {
+    res.render("error", {
+        error: error
+    })
 })
+
+// 监听端口，启动程序
+// app.listen(config.port, function () {
+//     console.log(`${pkg.name} listening on port ${config.port}`)
+// })
+
+
+// 直接启动 app.js 则会监听端口启动程序，如果 app.js 被 require 了，则导出 app
+if (module.parent) {
+    module.exports = app
+} else {
+    // 监听端口，启动程序
+    app.listen(config.port, function () {
+        console.log(`${pkg.name} listening on port ${config.port}`)
+    })
+}
