@@ -25,6 +25,9 @@ router.post('/', checkNotLogin, function (req, res, next) {
     let repassword = req.fields.repassword
 
 
+    console.log("avatar-----------", req.files.avatar.name)
+    console.log(!req.files.avatar.name)
+
     // 校验参数
     try {
         if (name.length >= 10 || name.length <= 1) {
